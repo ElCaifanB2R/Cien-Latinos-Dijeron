@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>100 Latinos Dijeron</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .logo {
+      font-size: 3em;
+      font-weight: bold;
+      color: #ffd700;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+      margin: 20px;
+      text-align: center;
+    }
+    .sala-info {
+      background: rgba(255,255,255,0.1);
+      padding: 15px 30px;
+      border-radius: 10px;
+      margin: 10px;
+      font-size: 1.2em;
+    }
+    .tablero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 90%;
+      max-width: 800px;
+      margin: 20px;
+    }
+    .respuesta-casilla {
+      background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+      border: 3px solid #ffd700;
+      border-radius: 15px;
+      padding: 20px;
+      font-size: 1.5em;
+      text-align: center;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .respuesta-casilla.revelada {
+      background: linear-gradient(145deg, #4a4a8a, #3a3a7a);
+      border-color: #00ff88;
+    }
+    .respuesta-casilla .numero {
+      color: #ffd700;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .respuesta-casilla .puntos {
+      color: #00ff88;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .puntajes {
+      display: flex;
+      gap: 50px;
+      margin: 20px;
+      font-size: 2em;
+    }
+    .equipo {
+      text-align: center;
+      padding: 20px 40px;
+      border-radius: 15px;
+      background: rgba(255,255,255,0.1);
+    }
+    .equipo.A { border: 3px solid #ff6b6b; }
+    .equipo.B { border: 3px solid #4ecdc4; }
+    .equipo-activo {
+      box-shadow: 0 0 30px rgba(255,215,0,0.5);
+      transform: scale(1.05);
+    }
+    .pregunta {
+      font-size: 2em;
+      text-align: center;
+      margin: 20px;
+      padding: 20px;
+      background: rgba(255,215,0,0.2);
+      border-radius: 15px;
+      width: 90%;
+    }
+    .strikes {
+      display: flex;
+      gap: 15px;
+      margin: 10px;
+    }
+    .strike {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #333;
+      border: 3px solid #ff4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+    }
+    .strike.activo {
+      background: #ff4444;
+      animation: pulse 0.5s;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+    .boton-presentador {
+      padding: 15px 30px;
+      font-size: 1.2em;
+      background: #ffd700;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 5px;
+      font-weight: bold;
+    }
+    .boton-presentador:hover {
+      background: #ffed4a;
+      transform: scale(1.05);
+    }
+    .panel-control {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+    .mensaje {
+      font-size: 1.5em;
+      color: #ffd700;
+      margin: 10px;
+      text-align: center;
+      min-height: 40px;
+    }
+    .qr-code {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px;
+      text-align: center;
+    }
+    .qr-code p {
+      color: #1a1a2e;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .buzzer-activo {
+      animation: buzzerPulse 0.5s infinite;
+    }
+    @keyframes buzzerPulse {
+      0%, 100% { box-shadow: 0 0 20px #ffd700; }
+      50% { box-shadow: 0 0 50px #ffd700, 0 0 100px #ffd700; }
+    }
+    #login-section, #game-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    input {
+      padding: 15px;
+      font-size: 1.2em;
+      border-radius: 10px;
+      border: 2px solid #ffd700;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      margin: 10px;
+      width: 300px;
+      text-align: center;
+    }
+    input::placeholder { color: #aaa; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- SECCIÓN DE LOGIN -->
+  <div id="login-section">
+    <div class="logo">🎮 100 LATINOS DIJERON</div>
+    <h2>Panel del Presentador</h2>
+    <input type="text" id="salaId" placeholder="Código de sala (dejar vacío para crear)">
+    <button class="boton-presentador" onclick="crearSala()">🎬 Crear Nueva Sala</button>
+    <button class="boton-presentador" onclick="unirseSala()">🚪 Unirse a Sala</button>
+  </div>
+
+  <!-- SECCIÓN DEL JUEGO -->
+  <div id="game-section" class="hidden">
+    <div class="logo">🎮 100 LATINOS DIJERON</div>
+    <div class="sala-info">Sala: <span id="sala-display">---</span></div>
+    
+    <div class="pregunta" id="pregunta-texto">Esperando pregunta...</div>
+    
+    <div class="puntajes">
+      <div class="equipo A" id="equipo-a">
+        <div>EQUIPO A</div>
+        <div id="puntos-a">0</div>
+      </div>
+      <div class="equipo B" id="equipo-b">
+        <div>EQUIPO B</div>
+        <div id="puntos-b">0</div>
+      </div>
+    </div>
+
+    <div class="tablero" id="tablero">
+      <!-- Las respuestas aparecerán aquí -->
+      <div class="respuesta-casilla" id="resp-0"><span class="numero">1</span>???</div>
+      <div class="respuesta-casilla" id="resp-1"><span class="numero">2</span>???</div>
+      <div class="respuesta-casilla" id="resp-2"><span class="numero">3</span>???</div>
+      <div class="respuesta-casilla" id="resp-3"><span class="numero">4</span>???</div>
+      <div class="respuesta-casilla" id="resp-4"><span class="numero">5</span>???</div>
+      <div class="respuesta-casilla" id="resp-5"><span class="numero">6</span>???</div>
+    </div>
+
+    <div class="strikes" id="strikes-container">
+      <div class="strike" id="strike-1">X</div>
+      <div class="strike" id="strike-2">X</div>
+      <div class="strike" id="strike-3">X</div>
+    </div>
+
+    <div class="mensaje" id="mensaje"></div>
+
+    <div class="panel-control" id="panel-presentador">
+      <button class="boton-presentador" onclick="nuevaPregunta()">❓ Nueva Pregunta</button>
+      <button class="boton-presentador" onclick="activarBuzzers()">🔴 Activar Buzzers</button>
+      <button class="boton-presentador" onclick="siguienteRonda()">➡️ Siguiente Ronda</button>
+      <button class="boton-presentador" onclick="iniciarDineroRapido()">💰 Dinero Rápido</button>
+    </div>
+
+    <div class="qr-code" id="qr-section">
+      <p>📱 Escanea para jugar en tu celular:</p>
+      <p style="font-size: 2em; color: #1a1a2e;" id="url-juego">URL aparecerá aquí</p>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let salaActual = null;
+    let soyPresentador = false;
+
+    function crearSala() {
+      socket.emit('CREAR_SALA');
+    }
+
+    function unirseSala() {
+      const salaId = document.getElementById('salaId').value.toUpperCase();
+      if (!salaId) {
+        alert('Por favor ingresa un código de sala');
+        return;
+      }
+      // Solo para presentador
+      salaActual = salaId;
+      socket.emit('UNIRSE_SALA', { salaId, equipo: 'A', nombre: 'Presentador' });
+    }
+
+    socket.on('SALA_CREADA', (data) => {
+      salaActual = data.salaId;
+      soyPresentador = true;
+      document.getElementById('sala-display').textContent = salaActual;
+      document.getElementById('url-juego').textContent = `${window.location.origin}/control/${salaActual}`;
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('game-section').classList.remove('hidden');
+      mostrarMensaje(`¡Sala ${salaActual} creada! Esperando jugadores...`);
+    });
+
+    socket.on('UNIDO_EXITOSO', (data) => {
+      document.getElementById('sala-display').textContent = data.salaId;
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('game-section').classList.remove('hidden');
+    });
+
+    socket.on('JUGADOR_UNIDO', (data) => {
+      mostrarMensaje(`${data.nombre} se unió al Equipo ${data.equipo}`);
+    });
+
+    function nuevaPregunta() {
+      socket.emit('NUEVA_PREGUNTA');
+    }
+
+    socket.on('NUEVA_PREGUNTA', (data) => {
+      document.getElementById('pregunta-texto').textContent = data.pregunta;
+      // Limpiar tablero
+      for (let i = 0; i < 6; i++) {
+        const casilla = document.getElementById(`resp-${i}`);
+        casilla.innerHTML = `<span class="numero">${i+1}</span>???`;
+        casilla.classList.remove('revelada');
+      }
+      // Limpiar strikes
+      document.querySelectorAll('.strike').forEach(s => s.classList.remove('activo'));
+      mostrarMensaje(`Ronda ${data.ronda} - ${data.numRespuestas} respuestas posibles`);
+    });
+
+    function activarBuzzers() {
+      socket.emit('ACTIVAR_BUZZERS');
+    }
+
+    socket.on('BUZZERS_ACTIVADOS', () => {
+      mostrarMensaje('🔴 ¡BUZZERS ACTIVADOS! 🔴');
+      document.body.classList.add('buzzer-activo');
+      setTimeout(() => document.body.classList.remove('buzzer-activo'), 3000);
+    });
+
+    socket.on('GANADOR_BUZZ', (data) => {
+      mostrarMensaje(`🏆 ¡${data.nombre} del Equipo ${data.equipo} fue el primero!`);
+    });
+
+    socket.on('RESPUESTA_REVELADA', (data) => {
+      const respuesta = data.respuesta;
+      const casilla = document.getElementById(`resp-${respuesta.orden - 1}`);
+      casilla.innerHTML = `
+        <span class="numero">${respuesta.orden}</span>
+        ${respuesta.texto}
+        <span class="puntos">${respuesta.puntos}</span>
+      `;
+      casilla.classList.add('revelada');
+    });
+
+    socket.on('STRIKE', (data) => {
+      const strikeEl = document.getElementById(`strike-${data.strikes}`);
+      if (strikeEl) strikeEl.classList.add('activo');
+      mostrarMensaje(`❌ ¡STRIKE ${data.strikes} para el Equipo ${data.equipo}!`);
+    });
+
+    socket.on('PUNTOS_ACTUALIZADOS', (puntos) => {
+      document.getElementById('puntos-a').textContent = puntos.A;
+      document.getElementById('puntos-b').textContent = puntos.B;
+    });
+
+    socket.on('OPORTUNIDAD_ROBO', (data) => {
+      mostrarMensaje(`⚡ ¡Equipo ${data.equipoOpuesto} puede ROBAR ${data.puntosEnJuego} puntos!`);
+    });
+
+    function siguienteRonda() {
+      socket.emit('SIGUIENTE_RONDA');
+    }
+
+    socket.on('NUEVA_RONDA', (data) => {
+      mostrarMensaje(`🎯 ¡RONDA ${data.ronda}! Puntos x${data.multiplicador}`);
+    });
+
+    function iniciarDineroRapido() {
+      socket.emit('INICIAR_DINERO_RAPIDO');
+    }
+
+    socket.on('INICIO_DINERO_RAPIDO', (data) => {
+      mostrarMensaje(`💰 ¡DINERO RÁPIDO! ${data.jugador} tiene ${data.tiempoPorPregunta} segundos por pregunta`);
+    });
+
+    function mostrarMensaje(texto) {
+      document.getElementById('mensaje').textContent = texto;
+    }
+
+    socket.on('ERROR', (msg) => {
+      alert('Error: ' + msg);
+    });
+  </script>
+</body>
+</html>
