@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Control - 100 Latinos</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .logo {
+      font-size: 1.5em;
+      color: #ffd700;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+    }
+    input, select {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.2em;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 2px solid #ffd700;
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    input::placeholder { color: #aaa; }
+    button {
+      width: 100%;
+      padding: 20px;
+      font-size: 1.3em;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      margin: 10px 0;
+      font-weight: bold;
+      transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.95); }
+    .btn-unirse {
+      background: #ffd700;
+      color: #1a1a2e;
+    }
+    .buzzer-btn {
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #ff4444, #cc0000);
+      color: white;
+      font-size: 2em;
+      box-shadow: 0 10px 30px rgba(255,0,0,0.5);
+      display: none;
+    }
+    .buzzer-btn.activo {
+      display: block;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 20px #ff4444; }
+      50% { box-shadow: 0 0 60px #ff4444, 0 0 100px #ff4444; }
+    }
+    .estado {
+      font-size: 1.2em;
+      text-align: center;
+      margin: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+    }
+    .respuesta-input {
+      display: none;
+      width: 100%;
+      max-width: 400px;
+    }
+    .respuesta-input input {
+      font-size: 1.5em;
+      text-align: center;
+    }
+    .respuesta-input button {
+      background: #00ff88;
+      color: #1a1a2e;
+    }
+    .equipo-a { border: 3px solid #ff6b6b; }
+    .equipo-b { border: 3px solid #4ecdc4; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div class="login-box" id="login-box">
+    <div class="logo">🎮 100 LATINOS DIJERON</div>
+    <input type="text" id="salaId" placeholder="Código de sala (ej: ABC123)" maxlength="6">
+    <input type="text" id="nombre" placeholder="Tu nombre" maxlength="20">
+    <select id="equipo">
+      <option value="A">Equipo A 🔴</option>
+      <option value="B">Equipo B 🔵</option>
+    </select>
+    <button class="btn-unirse" onclick="unirseSala()">🎮 UNIRSE AL JUEGO</button>
+  </div>
+
+  <!-- JUEGO -->
+  <div class="estado hidden" id="estado">Conectando...</div>
+  
+  <button class="buzzer-btn" id="buzzer" onclick="presionarBuzzer()">
+    🔴<br>TOCA<br>RÁPIDO
+  </button>
+
+  <div class="respuesta-input" id="respuesta-box">
+    <input type="text" id="respuesta-texto" placeholder="Escribe tu respuesta..." maxlength="50">
+    <button onclick="enviarRespuesta()">✅ ENVIAR</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let miSala = null;
+    let miEquipo = null;
+
+    function unirseSala() {
+      const salaId = document.getElementById('salaId').value.toUpperCase().trim();
+      const nombre = document.getElementById('nombre').value.trim();
+      const equipo = document.getElementById('equipo').value;
+
+      if (!salaId || !nombre) {
+        alert('Por favor llena todos los campos');
+        return;
+      }
+
+      miSala = salaId;
+      miEquipo = equipo;
+
+      socket.emit('UNIRSE_SALA', { salaId, equipo, nombre });
+    }
+
+    socket.on('UNIDO_EXITOSO', (data) => {
+      document.getElementById('login-box').classList.add('hidden');
+      document.getElementById('estado').classList.remove('hidden');
+      mostrarEstado(`✅ ¡Conectado! Sala: ${data.salaId} | Equipo ${data.equipo}`);
+    });
+
+    socket.on('ERROR', (msg) => {
+      alert('Error: ' + msg);
+    });
+
+    socket.on('BUZZERS_ACTIVADOS', () => {
+      mostrarEstado('🔴 ¡TOCA EL BOTÓN RÁPIDO! 🔴');
+      document.getElementById('buzzer').classList.add('activo');
+    });
+
+    function presionarBuzzer() {
+      socket.emit('BUZZER_PRESSED');
+      document.getElementById('buzzer').classList.remove('activo');
+      mostrarEstado('⏳ Esperando...');
+    }
+
+    socket.on('GANADOR_BUZZ', (data) => {
+      if (data.jugadorId === socket.id) {
+        mostrarEstado('🏆 ¡GANASTE EL TURNO! Escribe tu respuesta');
+        document.getElementById('respuesta-box').style.display = 'block';
+        document.getElementById('respuesta-texto').focus();
+      } else {
+        mostrarEstado(`❌ ${data.nombre} fue más rápido`);
+      }
+    });
+
+    function enviarRespuesta() {
+      const respuesta = document.getElementById('respuesta-texto').value.trim();
+      if (!respuesta) return;
+      
+      socket.emit('RESPUESTA_JUGADOR', { respuesta });
+      document.getElementById('respuesta-texto').value = '';
+      document.getElementById('respuesta-box').style.display = 'none';
+      mostrarEstado('Respuesta enviada...');
+    }
+
+    // También enviar con Enter
+    document.getElementById('respuesta-texto').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') enviarRespuesta();
+    });
+
+    socket.on('RESPUESTA_CORRECTA', () => {
+      mostrarEstado('✅ ¡RESPUESTA CORRECTA!');
+    });
+
+    socket.on('STRIKE', () => {
+      mostrarEstado('❌ ¡STRIKE!');
+    });
+
+    socket.on('NUEVA_PREGUNTA', () => {
+      document.getElementById('respuesta-box').style.display = 'none';
+      mostrarEstado('⏳ Esperando que activen los buzzers...');
+    });
+
+    function mostrarEstado(texto) {
+      document.getElementById('estado').textContent = texto;
+    }
+  </script>
+</body>
+</html>
